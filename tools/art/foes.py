@@ -210,8 +210,14 @@ def draw_witch(P, c, ps, tier):
 
 
 # ------------------------------------------------------------------ animations
+# Every foe shares the hero's skeleton and pixel style, but each one moves in its
+# own way: idle, walk and attack poses are authored per character.
+def _t(i, n):
+    return i / n * math.tau
+
+
 def walk(i):
-    t = i / 6 * math.tau
+    t = _t(i, 6)
     legs = []
     for ph in (t, t + math.pi):
         th = 0.6 * math.sin(ph)
@@ -224,13 +230,127 @@ def idle(i):
     return pose(breath=0.9 * (0.5 - 0.5 * math.cos(t)), hand=(25, 10), sword=78, cape=(0.12, t, 0), sway=math.sin(t) * 1.5, hover=1.5 + math.sin(t) * 1.2)
 
 
-ATTACK = [
-    pose(lean=-0.12, hand=(100, 12), sword=125, legs=(0.25, 0.1, -0.3, -0.3), shield_up=-2),
-    pose(lean=-0.28, hand=(125, 12), sword=152, legs=(0.3, 0.1, -0.4, -0.4), crouch=1.5, shield_up=-3),
-    pose(lean=0.4, hand=(12, 15), sword=2, legs=(0.8, 0.3, -0.6, -0.5), smear=(100, -30, 26), shift=(4, 0)),
-    pose(lean=0.34, hand=(-30, 13), sword=-45, legs=(0.7, 0.3, -0.55, -0.45), shift=(4, 0)),
-    pose(lean=0.1, hand=(10, 11), sword=40, legs=(0.3, 0.1, -0.25, -0.25), shift=(2, 0)),
+# ---- footman: a nervous conscript. Quick shallow breath, shield fidgeting, sword tip wagging.
+def idle_footman(i):
+    t = _t(i, 4)
+    return pose(breath=0.8 * (0.5 - 0.5 * math.cos(t)), hand=(25 + 6 * math.sin(t), 10), sword=76 + 12 * math.sin(t),
+                tilt=0.14 * math.sin(t), shield_up=1 + 1.6 * math.sin(t + 1), cape=None,
+                legs=(0.16, 0.08, -0.14, -0.12))
+
+
+def walk_footman(i):
+    t = _t(i, 6)
+    legs = []
+    for ph in (t, t + math.pi):
+        th = 0.5 * math.sin(ph)
+        legs += [th, th - (0.12 + 0.5 * max(0, math.sin(ph + 1.9)))]
+    return pose(lean=0.15, legs=tuple(legs), hand=(30, 10), sword=64 + 5 * math.sin(t),
+                hand_back=(-60, 9), shield_up=1.2 + math.sin(t * 2), cape=None)
+
+
+ATTACK_FOOTMAN = [
+    pose(lean=-0.1, hand=(95, 12), sword=118, legs=(0.25, 0.1, -0.3, -0.3), shield_up=0),
+    pose(lean=-0.22, hand=(118, 12), sword=138, legs=(0.3, 0.1, -0.38, -0.4), crouch=1.2, shield_up=-1),
+    pose(lean=0.32, hand=(18, 15), sword=10, legs=(0.7, 0.3, -0.55, -0.45), smear=(95, -40, 24), shift=(3, 0)),
+    pose(lean=0.28, hand=(-26, 13), sword=-30, legs=(0.6, 0.3, -0.5, -0.42), shift=(3, 0)),
+    pose(lean=0.08, hand=(14, 11), sword=44, legs=(0.3, 0.1, -0.25, -0.25), shift=(1, 0)),
 ]
+
+# ---- royal knight: a proud sentinel. Slow salute, chin up, braced kite shield, marching steps.
+def idle_royal(i):
+    t = _t(i, 4)
+    lift = 0.5 - 0.5 * math.cos(t)                     # blade rises to a salute and returns
+    return pose(breath=0.7 * (0.5 - 0.5 * math.cos(t)), lean=-0.05, tilt=-0.06,
+                hand=(25 - 48 * lift, 10), sword=78 - 42 * lift, hand_back=(-70, 9), shield_up=-1,
+                cape=None, legs=(0.12, 0.06, -0.16, -0.12))
+
+
+def walk_royal(i):
+    t = _t(i, 6)
+    legs = []
+    for ph in (t, t + math.pi):
+        th = 0.55 * math.sin(ph)
+        legs += [th, th - (0.16 + 0.7 * max(0, math.sin(ph + 1.7)))]     # snappy high-knee march
+    return pose(lean=0.02, legs=tuple(legs), hand=(62, 10), sword=88, hand_back=(-66, 9),
+                shield_up=math.sin(t * 2) * 1.2, cape=None)
+
+
+ATTACK_ROYAL = [
+    pose(lean=-0.14, hand=(105, 12), sword=130, legs=(0.3, 0.12, -0.35, -0.35), shield_up=-2),
+    pose(lean=-0.3, hand=(128, 13), sword=150, legs=(0.35, 0.12, -0.45, -0.45), shield_up=-3),
+    pose(lean=0.34, hand=(40, 15), sword=-4, legs=(0.75, 0.3, -0.6, -0.5), smear=(60, -20, 26), shift=(5, 0)),
+    pose(lean=0.3, hand=(30, 14), sword=-8, legs=(0.65, 0.28, -0.55, -0.45), shift=(4, 0)),
+    pose(lean=0.1, hand=(45, 11), sword=55, legs=(0.3, 0.1, -0.28, -0.25), shift=(2, 0)),
+]
+
+# ---- elite knight: a stalking hunter. Coiled crouch, weight shifting side to side, rippling cape.
+def idle_elite(i):
+    t = _t(i, 4)
+    return pose(crouch=2.2, breath=0.6 * (0.5 - 0.5 * math.cos(t)), lean=0.14,
+                shift=(2.2 * math.sin(t), 0), tilt=0.1 * math.sin(t + 0.6),
+                hand=(38, 11), sword=52, hand_back=(-76, 8), shield_up=0.5,
+                cape=(0.34, t, 0.5), legs=(0.3, 0.12, -0.34, -0.14))
+
+
+def walk_elite(i):
+    t = _t(i, 6)
+    legs = []
+    for ph in (t, t + math.pi):
+        th = 0.7 * math.sin(ph)
+        legs += [th, th - (0.1 + 0.6 * max(0, math.sin(ph + 1.9)))]
+    return pose(lean=0.2, crouch=1.5, legs=tuple(legs), hand=(40, 11), sword=48,
+                hand_back=(-78, 8), cape=(0.42, t, 0.8), shift=(1.5 * math.sin(t), 0))
+
+
+ATTACK_ELITE = [
+    pose(lean=-0.16, crouch=2.5, hand=(120, 11), sword=150, legs=(0.5, 0.15, -0.5, -0.5), shield_up=-2),
+    pose(lean=-0.3, crouch=3.5, hand=(132, 12), sword=165, legs=(0.55, 0.15, -0.55, -0.55), shield_up=-3),
+    pose(lean=0.42, crouch=0.5, hand=(-20, 16), sword=-55, legs=(0.9, 0.35, -0.7, -0.55), smear=(115, -60, 28), shift=(5, 0)),
+    pose(lean=0.36, hand=(-38, 14), sword=-70, legs=(0.8, 0.3, -0.6, -0.5), shift=(4, 0)),
+    pose(lean=0.12, crouch=1.5, hand=(20, 11), sword=30, legs=(0.35, 0.12, -0.3, -0.28), shift=(2, 0)),
+]
+
+# ---- the boss: a heavy tyrant. Deep slow breath, billowing cape, wide planted stance, stomping march.
+def idle_boss(i):
+    t = _t(i, 4)
+    return pose(breath=1.7 * (0.5 - 0.5 * math.cos(t)), lean=0.03 * math.sin(t + 0.5),
+                shift=(1.6 * math.sin(t * 0.5), 0), tilt=0.08 * math.sin(t),
+                hand=(18, 12), sword=95, hand_back=(-64, 10),
+                cape=(0.5, t, 2.5 + 1.2 * math.sin(t)), legs=(0.3, 0.1, -0.35, -0.12))
+
+
+def walk_boss(i):
+    t = _t(i, 6)
+    legs = []
+    for ph in (t, t + math.pi):
+        th = 0.75 * math.sin(ph)
+        legs += [th, th - (0.05 + 0.5 * max(0, math.sin(ph + 1.9)))]
+    return pose(lean=0.12, legs=tuple(legs), hand=(30, 12), sword=80 + 8 * math.sin(t),
+                hand_back=(-56, 10), cape=(0.55, t, 1.5), shift=(2 * math.sin(t), 0))
+
+
+ATTACK_BOSS = [
+    pose(lean=-0.2, hand=(120, 14), sword=150, legs=(0.4, 0.15, -0.45, -0.4)),
+    pose(lean=-0.34, hand=(140, 15), sword=168, legs=(0.45, 0.15, -0.5, -0.45), crouch=2),
+    pose(lean=0.5, hand=(0, 17), sword=-8, legs=(1.0, 0.4, -0.75, -0.6), crouch=3, smear=(120, -50, 34), shift=(6, 0)),
+    pose(lean=0.44, hand=(-20, 15), sword=-25, legs=(0.9, 0.35, -0.7, -0.55), crouch=2.5, shift=(5, 0)),
+    pose(lean=0.14, hand=(25, 13), sword=60, legs=(0.35, 0.12, -0.35, -0.3), shift=(2, 0)),
+]
+
+# ---- the witch: a hex weaver. She glides, her orb pulses and the staff sways on its own.
+def idle_witch(i):
+    t = _t(i, 4)
+    return pose(lean=0.06 * math.sin(t), hover=2.5 + 1.8 * math.sin(t), sway=math.sin(t) * 2,
+                hand=(25 + 8 * math.sin(t + 1), 10), staff=72 + 12 * math.sin(t * 0.5 + 1),
+                orb=1.0 + 0.35 * (0.5 - 0.5 * math.cos(t)))
+
+
+def walk_witch(i):
+    t = _t(i, 6)
+    return pose(hover=2.5 + math.sin(t) * 2, sway=math.sin(t) * 3, lean=0.1, hand=(25, 10),
+                staff=80 + 8 * math.sin(t), orb=1.1 + 0.15 * math.sin(t * 2))
+
+
 WITCH_ATTACK = [
     dict(lean=-0.1, hand=(70, 10), staff=100, orb=1.0), dict(lean=-0.2, hand=(95, 11), staff=115, orb=1.4),
     dict(lean=-0.25, hand=(110, 11), staff=125, orb=2.0), dict(lean=0.2, hand=(20, 12), staff=45, orb=1.5), dict(lean=0.05, hand=(40, 10), staff=75, orb=0.9),
@@ -270,6 +390,12 @@ def render(name, p):
     cell, origin = (BOSS_CELL, BOSS_ORIGIN) if boss else (CELL, ORIGIN)
     tier = {3: 1, 2: 2, 1: 3}[p]
     plan = [('idle', 4), ('walk', 6), ('attack', 5), ('hurt', 2), ('death', 6)]
+    humanoid = {
+        'footman': {'idle': idle_footman, 'walk': walk_footman, 'attack': lambda j: ATTACK_FOOTMAN[j]},
+        'royal': {'idle': idle_royal, 'walk': walk_royal, 'attack': lambda j: ATTACK_ROYAL[j]},
+        'elite': {'idle': idle_elite, 'walk': walk_elite, 'attack': lambda j: ATTACK_ELITE[j]},
+        'boss': {'idle': idle_boss, 'walk': walk_boss, 'attack': lambda j: ATTACK_BOSS[j]},
+    }
     rows = []
     for kind, n in plan:
         row = []
@@ -277,9 +403,9 @@ def render(name, p):
             P = Painter(cell, p, origin, pal, OUTLINE)
             if name == 'witch':
                 if kind == 'idle':
-                    ps = idle(i)
+                    ps = idle_witch(i)
                 elif kind == 'walk':
-                    ps = pose(hover=2 + math.sin(i / 6 * math.tau) * 1.5, sway=math.sin(i / 6 * math.tau) * 2.5, lean=0.08, hand=(25, 10), staff=80)
+                    ps = walk_witch(i)
                 elif kind == 'attack':
                     ps = pose(**WITCH_ATTACK[i])
                 elif kind == 'hurt':
@@ -290,7 +416,7 @@ def render(name, p):
                 draw_witch(P, cols, ps, tier)
             else:
                 s = STYLES[name]
-                ps = {'idle': idle, 'walk': walk, 'hurt': hurt_h, 'death': death_h}.get(kind, lambda j: ATTACK[j])(i)
+                ps = humanoid[name].get(kind, {'hurt': hurt_h, 'death': death_h}[kind] if kind in ('hurt', 'death') else None)(i)
                 P.scale = s['scale']
                 P.rot = ps['rot']
                 P.shift = ps['shift']
